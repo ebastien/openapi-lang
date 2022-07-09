@@ -20,7 +20,7 @@ where
         let node = expr.as_node_mut();
         let span = node.span;
         match node.as_expr_mut() {
-            Expr::Var(var) => match env.lookup(var) {
+            Expr::Var(var) if var.is_value() => match env.lookup(var) {
                 None => Err(Error::new(Kind::IdentifierNotInScope, "").with(expr)),
                 Some(val) => {
                     match val.as_node().as_expr() {

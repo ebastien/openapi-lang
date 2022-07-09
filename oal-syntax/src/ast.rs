@@ -166,13 +166,16 @@ pub struct Declaration<T> {
 impl<T: AsExpr> FromPair for Declaration<T> {
     fn from_pair(p: Pair) -> Self {
         let mut p = p.into_inner();
-        let name = p.nth(1).unwrap().as_str().into();
-        let bindings: Vec<T> = p
-            .next()
-            .unwrap()
-            .into_inner()
-            .map(|p| p.into_expr())
-            .collect();
+        let name: Ident = p.nth(1).unwrap().as_str().into();
+        let bindings: Vec<T> = if name.is_value() {
+            p.next()
+                .unwrap()
+                .into_inner()
+                .map(|p| p.into_expr())
+                .collect()
+        } else {
+            Default::default()
+        };
         let expr = p.next().unwrap().into_expr();
         let expr = if bindings.is_empty() {
             expr

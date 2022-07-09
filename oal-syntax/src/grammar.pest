@@ -10,7 +10,8 @@ http_status_code = @{ http_status_category ~ ASCII_DIGIT{2} }
 http_status = @{ http_status_range | http_status_code }
 
 ident_char = @{ ASCII_ALPHANUMERIC | "$" | "-" | "_" }
-ident = @{ !reserved_keyword ~ ASCII_ALPHA ~ ident_char* }
+val_ident = @{ !reserved_keyword ~ ASCII_ALPHA ~ ident_char* }
+ref_ident = @{ "@" ~ ident_char* }
 
 keyname_char = @{ ASCII_ALPHANUMERIC | "@" | "$" | "-" | "_" }
 keyname = @{ keyname_char* }
@@ -55,7 +56,7 @@ literal_str = ${ "\"" ~ literal_str_inner ~ "\"" }
 
 literal_type = { http_status_range | literal_num | literal_str }
 
-var = { ident }
+var = { ref_ident | val_ident }
 
 uri_char = @{ ASCII_ALPHANUMERIC | "-" | "." | "_" | "~" | "%" }
 uri_literal = @{ uri_char+ }
@@ -94,7 +95,7 @@ term_type = {
   ) ~ inline_ann?
 }
 
-apply = { ident ~ term_type+ }
+apply = { val_ident ~ term_type+ }
 app_type = { apply | term_type }
 
 range_type = { app_type ~ ( "::" ~ app_type )* }
@@ -116,9 +117,9 @@ rel_type = { term_type ~ "(" ~ xfer_type ~ ( "," ~ xfer_type )* ~ ")" }
 
 expr_type = { rel_type | xfer_type }
 
-binding = { ident }
+binding = { val_ident }
 bindings = { binding* }
-decl = { let_kw ~ ident ~ bindings ~ "=" ~ expr_type ~ ";" }
+decl = { let_kw ~ ( ref_ident | val_ident ~ bindings ) ~ "=" ~ expr_type ~ ";" }
 
 res = { res_kw ~ expr_type ~ ";" }
 

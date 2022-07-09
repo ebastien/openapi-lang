@@ -253,6 +253,7 @@ impl Builder {
                 ast::Operator::Any => self.any_schema(&operation.schemas),
                 ast::Operator::Range => unreachable!(),
             },
+            spec::Expr::Ref(_) => todo!(),
         };
         sch.schema_data.description = s.desc.clone();
         sch.schema_data.title = s.title.clone();
@@ -443,7 +444,7 @@ impl Builder {
         let label = once(prefix)
             .chain(uri.path.iter().map(|s| match s {
                 spec::UriSegment::Literal(l) => l.to_lowercase(),
-                spec::UriSegment::Variable(t) => t.name.to_lowercase(),
+                spec::UriSegment::Variable(t) => t.name.as_ref().to_lowercase(),
             }))
             .collect::<Vec<_>>()
             .join("-");

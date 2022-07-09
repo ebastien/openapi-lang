@@ -208,6 +208,11 @@ impl PrimInteger {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+pub struct Reference {
+    pub name: Ident,
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub enum Expr {
     Num(PrimNumber),
     Str(PrimString),
@@ -218,6 +223,7 @@ pub enum Expr {
     Array(Box<Array>),
     Object(Object),
     Op(VariadicOp),
+    Ref(Reference),
 }
 
 impl Expr {
@@ -234,6 +240,7 @@ impl Expr {
             ast::Expr::Array(_) => Array::try_from(e).map(|a| Expr::Array(Box::new(a))),
             ast::Expr::Object(_) => Object::try_from(e).map(Expr::Object),
             ast::Expr::Op(_) => VariadicOp::try_from(e).map(Expr::Op),
+            ast::Expr::Var(v) if v.is_reference() => Ok(Expr::Ref(Reference { name: v.clone() })),
             _ => Err(Error::new(Kind::UnexpectedExpression, "expected schema-like").with(e)),
         }
         .map_err(|err| err.at(span))

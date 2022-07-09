@@ -586,3 +586,16 @@ fn parse_literal_status_decl() {
         panic!("expected declaration");
     }
 }
+
+#[test]
+fn parse_reference_decl() {
+    let d: Program = parse("let @a = {};").expect("parsing failed");
+
+    assert_eq!(d.stmts.len(), 1);
+
+    if let Statement::Decl(decl) = d.stmts.first().unwrap() {
+        assert!(decl.name.is_reference());
+    } else {
+        panic!("expected declaration");
+    }
+}

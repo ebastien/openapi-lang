@@ -116,3 +116,17 @@ fn evaluate_invalid_status() -> anyhow::Result<()> {
 
     anyhow::Ok(())
 }
+
+#[test]
+fn evaluate_reference() -> anyhow::Result<()> {
+    let code = r#"
+        let @a = {};
+        res / ( get -> @a );
+    "#;
+
+    let _spec = eval(code)?;
+
+    // TODO
+
+    anyhow::Ok(())
+}
