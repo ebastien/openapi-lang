@@ -1,3 +1,6 @@
+mod oas;
+
+use crate::oas::into_box_ref;
 use indexmap::{indexmap, IndexMap};
 use oal_compiler::spec;
 use oal_syntax::atom::HttpStatusRange;
@@ -16,7 +19,7 @@ pub struct Builder {
     base: Option<OpenAPI>,
 }
 
-type Headers = IndexMap<String, ReferenceOr<openapiv3::Header>>;
+type Headers = IndexMap<String, ReferenceOr<Header>>;
 
 impl Builder {
     pub fn new() -> Builder {
@@ -160,10 +163,7 @@ impl Builder {
         Schema {
             schema_data: Default::default(),
             schema_kind: SchemaKind::AllOf {
-                all_of: schemas
-                    .iter()
-                    .map(|s| ReferenceOr::Item(self.schema(s)))
-                    .collect(),
+                all_of: schemas.iter().map(|s| self.schema(s)).collect(),
             },
         }
     }
@@ -174,7 +174,7 @@ impl Builder {
             .iter()
             .map(|p| {
                 let ident = p.name.as_ref().into();
-                let expr = ReferenceOr::Item(self.schema(&p.schema).into());
+                let expr = into_box_ref(self.schema(&p.schema));
                 (ident, expr)
             })
             .collect();
@@ -207,7 +207,7 @@ impl Builder {
         Schema {
             schema_data: Default::default(),
             schema_kind: SchemaKind::Type(Type::Array(ArrayType {
-                items: Some(ReferenceOr::Item(self.schema(&array.item).into())),
+                items: Some(into_box_ref(self.schema(&array.item))),
                 min_items: None,
                 max_items: None,
                 unique_items: false,
@@ -219,10 +219,7 @@ impl Builder {
         Schema {
             schema_data: Default::default(),
             schema_kind: SchemaKind::OneOf {
-                one_of: schemas
-                    .iter()
-                    .map(|s| ReferenceOr::Item(self.schema(s)))
-                    .collect(),
+                one_of: schemas.iter().map(|s| self.schema(s)).collect(),
             },
         }
     }
@@ -231,35 +228,38 @@ impl Builder {
         Schema {
             schema_data: Default::default(),
             schema_kind: SchemaKind::AnyOf {
-                any_of: schemas
-                    .iter()
-                    .map(|s| ReferenceOr::Item(self.schema(s)))
-                    .collect(),
+                any_of: schemas.iter().map(|s| self.schema(s)).collect(),
             },
         }
     }
 
-    fn schema(&self, s: &spec::Schema) -> Schema {
-        let mut sch = match &s.expr {
-            spec::SchemaExpr::Num(p) => self.number_schema(p),
-            spec::SchemaExpr::Str(p) => self.string_schema(p),
-            spec::SchemaExpr::Bool(p) => self.boolean_schema(p),
-            spec::SchemaExpr::Int(p) => self.integer_schema(p),
-            spec::SchemaExpr::Rel(rel) => self.rel_schema(rel),
-            spec::SchemaExpr::Uri(uri) => self.uri_schema(uri),
-            spec::SchemaExpr::Object(obj) => self.object_schema(obj),
-            spec::SchemaExpr::Array(array) => self.array_schema(array),
-            spec::SchemaExpr::Op(operation) => match operation.op {
-                ast::Operator::Join => self.join_schema(&operation.schemas),
-                ast::Operator::Sum => self.sum_schema(&operation.schemas),
-                ast::Operator::Any => self.any_schema(&operation.schemas),
-                ast::Operator::Range => unreachable!(),
-            },
-            spec::SchemaExpr::Ref(_) => todo!(),
-        };
-        sch.schema_data.description = s.desc.clone();
-        sch.schema_data.title = s.title.clone();
-        sch
+    fn schema(&self, s: &spec::Schema) -> ReferenceOr<Schema> {
+        if let spec::SchemaExpr::Ref(r) = &s.expr {
+            ReferenceOr::Reference {
+                reference: r.as_ref().to_owned(),
+            }
+        } else {
+            let mut sch = match &s.expr {
+                spec::SchemaExpr::Num(p) => self.number_schema(p),
+                spec::SchemaExpr::Str(p) => self.string_schema(p),
+                spec::SchemaExpr::Bool(p) => self.boolean_schema(p),
+                spec::SchemaExpr::Int(p) => self.integer_schema(p),
+                spec::SchemaExpr::Rel(rel) => self.rel_schema(rel),
+                spec::SchemaExpr::Uri(uri) => self.uri_schema(uri),
+                spec::SchemaExpr::Object(obj) => self.object_schema(obj),
+                spec::SchemaExpr::Array(array) => self.array_schema(array),
+                spec::SchemaExpr::Op(operation) => match operation.op {
+                    ast::Operator::Join => self.join_schema(&operation.schemas),
+                    ast::Operator::Sum => self.sum_schema(&operation.schemas),
+                    ast::Operator::Any => self.any_schema(&operation.schemas),
+                    ast::Operator::Range => unreachable!(),
+                },
+                spec::SchemaExpr::Ref(_) => unreachable!(),
+            };
+            sch.schema_data.description = s.desc.clone();
+            sch.schema_data.title = s.title.clone();
+            ReferenceOr::Item(sch)
+        }
     }
 
     fn prop_param_data(&self, prop: &spec::Property, required: bool) -> ParameterData {
@@ -268,7 +268,7 @@ impl Builder {
             description: prop.desc.clone(),
             required,
             deprecated: None,
-            format: ParameterSchemaOrContent::Schema(ReferenceOr::Item(self.schema(&prop.schema))),
+            format: ParameterSchemaOrContent::Schema(self.schema(&prop.schema)),
             example: None,
             examples: Default::default(),
             explode: None,
@@ -305,7 +305,7 @@ impl Builder {
             style: Default::default(),
             required: prop.required.unwrap_or(false),
             deprecated: None,
-            format: ParameterSchemaOrContent::Schema(ReferenceOr::Item(self.schema(&prop.schema))),
+            format: ParameterSchemaOrContent::Schema(self.schema(&prop.schema)),
             example: None,
             examples: Default::default(),
             extensions: Default::default(),
@@ -346,7 +346,7 @@ impl Builder {
         domain.schema.as_ref().map(|schema| {
             ReferenceOr::Item(RequestBody {
                 content: indexmap! { media => MediaType {
-                    schema: Some(ReferenceOr::Item(self.schema(schema))),
+                    schema: Some(self.schema(schema)),
                     ..Default::default()
                 }},
                 description: domain.desc.clone(),
@@ -402,7 +402,7 @@ impl Builder {
                 if let Some(schema) = content.schema.as_ref() {
                     let media_type = media.clone().unwrap_or_else(|| self.media_type());
                     let media_schema = MediaType {
-                        schema: Some(ReferenceOr::Item(self.schema(schema))),
+                        schema: Some(self.schema(schema)),
                         ..Default::default()
                     };
                     res.content.insert(media_type, media_schema);

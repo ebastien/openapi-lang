@@ -296,3 +296,15 @@ paths:
         schema:
           type: string
         style: form
+  /:
+    get:
+      summary: get-
+      operationId: get-
+      responses:
+        default:
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "@ref"
+components: {}

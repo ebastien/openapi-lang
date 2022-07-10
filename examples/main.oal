@@ -28,6 +28,10 @@ res /something?{ 'q str } (
   get : <headers={ifnmatch},> -> with_err obj3
 );
 
+let @ref = {};
+
+res / ( get -> @ref );
+
 /*
  * Block
  * comments
