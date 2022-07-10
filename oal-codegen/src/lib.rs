@@ -3,10 +3,10 @@ use oal_compiler::spec;
 use oal_syntax::atom::HttpStatusRange;
 use oal_syntax::{ast, atom};
 use openapiv3::{
-    ArrayType, Header, Info, IntegerType, MediaType, NumberType, ObjectType, OpenAPI, Operation,
-    Parameter, ParameterData, ParameterSchemaOrContent, PathItem, Paths, ReferenceOr, RequestBody,
-    Response, Responses, Schema, SchemaData, SchemaKind, Server, StatusCode, StringType, Type,
-    VariantOrUnknownOrEmpty,
+    ArrayType, Components, Header, Info, IntegerType, MediaType, NumberType, ObjectType, OpenAPI,
+    Operation, Parameter, ParameterData, ParameterSchemaOrContent, PathItem, Paths, ReferenceOr,
+    RequestBody, Response, Responses, Schema, SchemaData, SchemaKind, Server, StatusCode,
+    StringType, Type, VariantOrUnknownOrEmpty,
 };
 use std::iter::once;
 
@@ -35,12 +35,14 @@ impl Builder {
 
     pub fn into_openapi(self) -> OpenAPI {
         let paths = self.all_paths();
+        let components = self.all_components();
         let mut definition = if let Some(base) = self.base {
             base
         } else {
             self.default_base()
         };
         definition.paths = paths;
+        definition.components = Some(components);
         definition
     }
 
@@ -239,21 +241,21 @@ impl Builder {
 
     fn schema(&self, s: &spec::Schema) -> Schema {
         let mut sch = match &s.expr {
-            spec::Expr::Num(p) => self.number_schema(p),
-            spec::Expr::Str(p) => self.string_schema(p),
-            spec::Expr::Bool(p) => self.boolean_schema(p),
-            spec::Expr::Int(p) => self.integer_schema(p),
-            spec::Expr::Rel(rel) => self.rel_schema(rel),
-            spec::Expr::Uri(uri) => self.uri_schema(uri),
-            spec::Expr::Object(obj) => self.object_schema(obj),
-            spec::Expr::Array(array) => self.array_schema(array),
-            spec::Expr::Op(operation) => match operation.op {
+            spec::SchemaExpr::Num(p) => self.number_schema(p),
+            spec::SchemaExpr::Str(p) => self.string_schema(p),
+            spec::SchemaExpr::Bool(p) => self.boolean_schema(p),
+            spec::SchemaExpr::Int(p) => self.integer_schema(p),
+            spec::SchemaExpr::Rel(rel) => self.rel_schema(rel),
+            spec::SchemaExpr::Uri(uri) => self.uri_schema(uri),
+            spec::SchemaExpr::Object(obj) => self.object_schema(obj),
+            spec::SchemaExpr::Array(array) => self.array_schema(array),
+            spec::SchemaExpr::Op(operation) => match operation.op {
                 ast::Operator::Join => self.join_schema(&operation.schemas),
                 ast::Operator::Sum => self.sum_schema(&operation.schemas),
                 ast::Operator::Any => self.any_schema(&operation.schemas),
                 ast::Operator::Range => unreachable!(),
             },
-            spec::Expr::Ref(_) => todo!(),
+            spec::SchemaExpr::Ref(_) => todo!(),
         };
         sch.schema_data.description = s.desc.clone();
         sch.schema_data.title = s.title.clone();
@@ -514,6 +516,10 @@ impl Builder {
             paths,
             extensions: Default::default(),
         }
+    }
+
+    fn all_components(&self) -> Components {
+        Default::default()
     }
 }
 

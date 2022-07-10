@@ -7,7 +7,7 @@ pub enum Kind {
     IdentifierNotInScope,
     IdentifierNotAFunction,
     InvalidTypes,
-    RelationConflict,
+    Conflict,
     UnexpectedExpression,
     InvalidYAML,
     CycleDetected,

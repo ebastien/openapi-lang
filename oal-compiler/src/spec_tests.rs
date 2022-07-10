@@ -1,6 +1,6 @@
 use crate::compile::compile;
 use crate::errors::{Error, Kind};
-use crate::spec::{Content, Expr, Object, Spec, Uri, UriSegment};
+use crate::spec::{Content, Object, Reference, SchemaExpr, Spec, Uri, UriSegment};
 use crate::{Locator, ModuleSet, Program};
 use oal_syntax::{atom, parse};
 
@@ -45,10 +45,10 @@ fn evaluate_simple() -> anyhow::Result<()> {
 
     if let Some(x) = &p.xfers[atom::Method::Put] {
         let d = x.domain.schema.as_ref().unwrap();
-        assert_eq!(d.expr, Expr::Object(Object::default()));
+        assert_eq!(d.expr, SchemaExpr::Object(Object::default()));
         assert_eq!(d.desc, Some("some record".to_owned()));
         let r = x.ranges.values().next().unwrap().schema.as_ref().unwrap();
-        assert_eq!(r.expr, Expr::Object(Object::default()));
+        assert_eq!(r.expr, SchemaExpr::Object(Object::default()));
         assert_eq!(r.desc, Some("some record".to_owned()));
     } else {
         panic!("expected transfer on HTTP PUT");
@@ -124,9 +124,36 @@ fn evaluate_reference() -> anyhow::Result<()> {
         res / ( get -> @a );
     "#;
 
-    let _spec = eval(code)?;
+    let spec = eval(code)?;
 
-    // TODO
+    let (name, ref_) = spec.refs.iter().next().expect("expected reference");
+
+    assert_eq!(name.as_ref(), "@a");
+
+    if let Reference::Schema(s) = ref_ {
+        match s {
+            SchemaExpr::Object(_) => {}
+            _ => panic!("expected object expression"),
+        }
+    } else {
+        panic!("expected schema reference")
+    }
+
+    let rel = spec.rels.values().next().expect("expected relation");
+
+    let xfer = rel.xfers[atom::Method::Get]
+        .as_ref()
+        .expect("expected get transfer");
+
+    let range = xfer
+        .ranges
+        .values()
+        .next()
+        .unwrap()
+        .schema
+        .as_ref()
+        .unwrap();
+    assert_eq!(range.expr, SchemaExpr::Ref("@a".into()));
 
     anyhow::Ok(())
 }
