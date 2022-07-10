@@ -2,7 +2,7 @@ use "module.oal";
 
 // Function application
 # description: "some other stuff"
-let obj3 = f { 'height num } { 'stuff any1 };
+let @obj3 = f { 'height num } { 'stuff any1 };
 
 // Headers
 # description: "identifier for a specific version of a resource"
@@ -25,12 +25,8 @@ let with_err s = <status=200, media=vendor, headers={etag}, s>  `description: "a
 res rel1;
 
 res /something?{ 'q str } (
-  get : <headers={ifnmatch},> -> with_err obj3
+  get : <headers={ifnmatch},> -> with_err @obj3
 );
-
-let @ref = {};
-
-res / ( get -> @ref );
 
 /*
  * Block

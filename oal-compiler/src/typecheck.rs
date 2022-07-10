@@ -3,8 +3,8 @@ use crate::node::NodeRef;
 use crate::scope::Env;
 use crate::tag::{Tag, Tagged};
 use oal_syntax::ast::{
-    Array, AsExpr, Content, Expr, Object, Operator, Property, Relation, Transfer, Uri, UriSegment,
-    VariadicOp,
+    Array, AsExpr, Content, Declaration, Expr, Object, Operator, Property, Relation, Transfer, Uri,
+    UriSegment, VariadicOp,
 };
 
 trait TypeChecked {
@@ -154,26 +154,40 @@ impl<T: AsExpr + Tagged> TypeChecked for Object<T> {
     }
 }
 
+impl<T: AsExpr + Tagged> TypeChecked for Declaration<T> {
+    fn type_check(&self) -> Result<()> {
+        if self.name.is_value() || self.expr.unwrap_tag().is_schema() {
+            Ok(())
+        } else {
+            Err(Error::new(Kind::InvalidTypes, "ill-formed reference").with(self))
+        }
+    }
+}
+
 pub fn type_check<T>(_acc: &mut (), _env: &mut Env<T>, node_ref: NodeRef<T>) -> Result<()>
 where
     T: AsExpr + Tagged,
 {
-    if let NodeRef::Expr(expr) = node_ref {
-        let node = expr.as_node();
-        let span = node.span;
-        match node.as_expr() {
-            Expr::Op(op) => op.type_check(),
-            Expr::Rel(rel) => rel.type_check(),
-            Expr::Uri(uri) => uri.type_check(),
-            Expr::Array(arr) => arr.type_check(),
-            Expr::Property(prop) => prop.type_check(),
-            Expr::Object(obj) => obj.type_check(),
-            Expr::Content(cnt) => cnt.type_check(),
-            Expr::Xfer(xfer) => xfer.type_check(),
-            _ => Ok(()),
+    match node_ref {
+        NodeRef::Expr(expr) => {
+            let node = expr.as_node();
+            let span = node.span;
+            match node.as_expr() {
+                Expr::Op(op) => op.type_check(),
+                Expr::Rel(rel) => rel.type_check(),
+                Expr::Uri(uri) => uri.type_check(),
+                Expr::Array(arr) => arr.type_check(),
+                Expr::Property(prop) => prop.type_check(),
+                Expr::Object(obj) => obj.type_check(),
+                Expr::Content(cnt) => cnt.type_check(),
+                Expr::Xfer(xfer) => xfer.type_check(),
+                _ => Ok(()),
+            }
+            .map_err(|err| err.at(span))
         }
-        .map_err(|err| err.at(span))
-    } else {
-        Ok(())
+        NodeRef::Decl(decl) => decl
+            .type_check()
+            .map_err(|err| err.at(decl.expr.as_node().span)),
+        _ => Ok(()),
     }
 }

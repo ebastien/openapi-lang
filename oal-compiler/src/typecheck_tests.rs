@@ -40,6 +40,7 @@ fn typecheck_ok() {
         "let a = /something?{ 'q str } ( get -> {} );",
         "let a = 'q str; let b = /path/{a};",
         r#"let a = <status=200, media="text/plain", headers={ 'h str }, str>;"#,
+        "let @a = {};",
     ];
 
     for c in cases {
@@ -57,6 +58,7 @@ fn typecheck_error() {
         r#"let a = <status=num, {}>;"#,
         r#"let a = <media=str, {}>;"#,
         r#"let a = <headers=str, {}>;"#,
+        "let @a = 404;",
     ];
 
     for c in cases {

@@ -234,9 +234,9 @@ impl Builder {
     }
 
     fn schema(&self, s: &spec::Schema) -> ReferenceOr<Schema> {
-        if let spec::SchemaExpr::Ref(r) = &s.expr {
+        if let spec::SchemaExpr::Ref(name) = &s.expr {
             ReferenceOr::Reference {
-                reference: r.as_ref().to_owned(),
+                reference: format!("#/components/schemas/{}", name.untagged()),
             }
         } else {
             let mut sch = match &s.expr {
@@ -433,6 +433,19 @@ impl Builder {
         }
     }
 
+    fn uri_segment_label(&self, s: &spec::UriSegment) -> String {
+        match s {
+            spec::UriSegment::Literal(l) => {
+                if l.is_empty() {
+                    "root".to_owned()
+                } else {
+                    l.to_lowercase()
+                }
+            }
+            spec::UriSegment::Variable(t) => t.name.as_ref().to_lowercase(),
+        }
+    }
+
     fn xfer_id(
         &self,
         xfer: &spec::Transfer,
@@ -444,10 +457,7 @@ impl Builder {
         }
         let prefix = self.method_label(method).to_owned();
         let label = once(prefix)
-            .chain(uri.path.iter().map(|s| match s {
-                spec::UriSegment::Literal(l) => l.to_lowercase(),
-                spec::UriSegment::Variable(t) => t.name.as_ref().to_lowercase(),
-            }))
+            .chain(uri.path.iter().map(|s| self.uri_segment_label(s)))
             .collect::<Vec<_>>()
             .join("-");
         Some(label)
@@ -519,7 +529,20 @@ impl Builder {
     }
 
     fn all_components(&self) -> Components {
-        Default::default()
+        let schemas = if let Some(spec) = &self.spec {
+            spec.refs
+                .iter()
+                .flat_map(|(name, reference)| match reference {
+                    spec::Reference::Schema(s) => Some((name.untagged(), self.schema(s))),
+                })
+                .collect()
+        } else {
+            Default::default()
+        };
+        Components {
+            schemas,
+            ..Default::default()
+        }
     }
 }
 

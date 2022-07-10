@@ -473,13 +473,13 @@ impl Relation {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Reference {
-    Schema(SchemaExpr),
+    Schema(Schema),
 }
 
 impl Reference {
     fn try_from<T: AsExpr + Annotated>(e: &T) -> Result<Self> {
-        let expr = SchemaExpr::try_from(e)?;
-        Ok(Reference::Schema(expr))
+        let s = Schema::try_from(e)?;
+        Ok(Reference::Schema(s))
     }
 }
 

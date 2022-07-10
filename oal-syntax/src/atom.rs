@@ -11,10 +11,17 @@ pub struct Ident(Rc<str>);
 
 impl Ident {
     pub fn is_reference(&self) -> bool {
-        self.0.as_ref().starts_with("@")
+        self.0.as_ref().starts_with('@')
     }
     pub fn is_value(&self) -> bool {
         !self.is_reference()
+    }
+    pub fn untagged(&self) -> String {
+        if self.is_reference() {
+            self.0.strip_prefix('@').unwrap().to_owned()
+        } else {
+            self.0.as_ref().to_owned()
+        }
     }
 }
 

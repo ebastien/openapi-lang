@@ -28,26 +28,7 @@ paths:
           content:
             application/json:
               schema:
-                description: some stuff
-                type: object
-                properties:
-                  firstName:
-                    title: First name
-                    type: string
-                    pattern: "^[a-z]+$"
-                  lastName:
-                    title: Last name
-                    type: string
-                    pattern: "^[a-z]+$"
-                  middleNames:
-                    title: Middle names
-                    type: array
-                    items:
-                      type: string
-                      pattern: "^[a-z]+$"
-                required:
-                  - firstName
-                  - lastName
+                $ref: "#/components/schemas/obj1"
     put:
       summary: does something
       operationId: put-some-path-id-template
@@ -64,52 +45,14 @@ paths:
         content:
           application/json:
             schema:
-              description: some stuff
-              type: object
-              properties:
-                firstName:
-                  title: First name
-                  type: string
-                  pattern: "^[a-z]+$"
-                lastName:
-                  title: Last name
-                  type: string
-                  pattern: "^[a-z]+$"
-                middleNames:
-                  title: Middle names
-                  type: array
-                  items:
-                    type: string
-                    pattern: "^[a-z]+$"
-              required:
-                - firstName
-                - lastName
+              $ref: "#/components/schemas/obj1"
       responses:
         default:
           description: some content
           content:
             application/json:
               schema:
-                description: some stuff
-                type: object
-                properties:
-                  firstName:
-                    title: First name
-                    type: string
-                    pattern: "^[a-z]+$"
-                  lastName:
-                    title: Last name
-                    type: string
-                    pattern: "^[a-z]+$"
-                  middleNames:
-                    title: Middle names
-                    type: array
-                    items:
-                      type: string
-                      pattern: "^[a-z]+$"
-                required:
-                  - firstName
-                  - lastName
+                $ref: "#/components/schemas/obj1"
     patch:
       summary: does something
       operationId: patch-some-path-id-template
@@ -126,52 +69,14 @@ paths:
         content:
           application/json:
             schema:
-              description: some stuff
-              type: object
-              properties:
-                firstName:
-                  title: First name
-                  type: string
-                  pattern: "^[a-z]+$"
-                lastName:
-                  title: Last name
-                  type: string
-                  pattern: "^[a-z]+$"
-                middleNames:
-                  title: Middle names
-                  type: array
-                  items:
-                    type: string
-                    pattern: "^[a-z]+$"
-              required:
-                - firstName
-                - lastName
+              $ref: "#/components/schemas/obj1"
       responses:
         default:
           description: some content
           content:
             application/json:
               schema:
-                description: some stuff
-                type: object
-                properties:
-                  firstName:
-                    title: First name
-                    type: string
-                    pattern: "^[a-z]+$"
-                  lastName:
-                    title: Last name
-                    type: string
-                    pattern: "^[a-z]+$"
-                  middleNames:
-                    title: Middle names
-                    type: array
-                    items:
-                      type: string
-                      pattern: "^[a-z]+$"
-                required:
-                  - firstName
-                  - lastName
+                $ref: "#/components/schemas/obj1"
     parameters:
       - in: path
         name: id
@@ -204,78 +109,7 @@ paths:
           content:
             application/vnd.blah+json:
               schema:
-                description: some other stuff
-                allOf:
-                  - allOf:
-                      - description: some stuff
-                        type: object
-                        properties:
-                          firstName:
-                            title: First name
-                            type: string
-                            pattern: "^[a-z]+$"
-                          lastName:
-                            title: Last name
-                            type: string
-                            pattern: "^[a-z]+$"
-                          middleNames:
-                            title: Middle names
-                            type: array
-                            items:
-                              type: string
-                              pattern: "^[a-z]+$"
-                        required:
-                          - firstName
-                          - lastName
-                      - type: object
-                        properties:
-                          age:
-                            type: integer
-                            minimum: 0
-                            maximum: 999
-                  - oneOf:
-                      - type: object
-                        properties:
-                          height:
-                            type: number
-                      - type: object
-                        properties:
-                          stuff:
-                            anyOf:
-                              - oneOf:
-                                  - title: some identifier
-                                    type: number
-                                  - type: string
-                              - allOf:
-                                  - description: some stuff
-                                    type: object
-                                    properties:
-                                      firstName:
-                                        title: First name
-                                        type: string
-                                        pattern: "^[a-z]+$"
-                                      lastName:
-                                        title: Last name
-                                        type: string
-                                        pattern: "^[a-z]+$"
-                                      middleNames:
-                                        title: Middle names
-                                        type: array
-                                        items:
-                                          type: string
-                                          pattern: "^[a-z]+$"
-                                    required:
-                                      - firstName
-                                      - lastName
-                                  - type: object
-                                    properties:
-                                      age:
-                                        type: integer
-                                        minimum: 0
-                                        maximum: 999
-                              - example: "/some/path/{id}/template"
-                                type: string
-                                format: uri-reference
+                $ref: "#/components/schemas/obj3"
         5XX:
           description: internal error
           content:
@@ -296,15 +130,26 @@ paths:
         schema:
           type: string
         style: form
-  /:
-    get:
-      summary: get-
-      operationId: get-
-      responses:
-        default:
-          description: ""
-          content:
-            application/json:
-              schema:
-                $ref: "@ref"
-components: {}
+components:
+  schemas:
+    obj3:
+      description: some other stuff
+      allOf:
+        - $ref: "#/components/schemas/obj2"
+        - oneOf:
+            - type: object
+              properties:
+                height:
+                  type: number
+            - type: object
+              properties:
+                stuff:
+                  anyOf:
+                    - oneOf:
+                        - title: some identifier
+                          type: number
+                        - type: string
+                    - $ref: "#/components/schemas/obj2"
+                    - example: "/some/path/{id}/template"
+                      type: string
+                      format: uri-reference

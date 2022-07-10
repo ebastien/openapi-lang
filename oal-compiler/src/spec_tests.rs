@@ -131,7 +131,7 @@ fn evaluate_reference() -> anyhow::Result<()> {
     assert_eq!(name.as_ref(), "@a");
 
     if let Reference::Schema(s) = ref_ {
-        match s {
+        match s.expr {
             SchemaExpr::Object(_) => {}
             _ => panic!("expected object expression"),
         }
