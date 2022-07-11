@@ -6,10 +6,12 @@ use oal_syntax::{atom, parse};
 
 fn eval(code: &str) -> anyhow::Result<Spec> {
     let loc = Locator::try_from("test:main")?;
-    let mods = ModuleSet::new(loc.clone());
+    let mut mods = ModuleSet::new(loc.clone());
     let prg: Program = parse(code)?;
     let prg = compile(&mods, &loc, prg)?;
-    let spec = Spec::try_from(&prg)?;
+    mods.insert(loc, prg);
+
+    let spec = Spec::try_from(&mods)?;
 
     anyhow::Ok(spec)
 }
@@ -130,13 +132,11 @@ fn evaluate_reference() -> anyhow::Result<()> {
 
     assert_eq!(name.as_ref(), "@a");
 
-    if let Reference::Schema(s) = ref_ {
-        match s.expr {
+    match ref_ {
+        Reference::Schema(s) => match s.expr {
             SchemaExpr::Object(_) => {}
             _ => panic!("expected object expression"),
-        }
-    } else {
-        panic!("expected schema reference")
+        },
     }
 
     let rel = spec.rels.values().next().expect("expected relation");

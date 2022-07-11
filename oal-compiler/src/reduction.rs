@@ -21,7 +21,7 @@ where
         let span = node.span;
         match node.as_expr_mut() {
             Expr::Var(var) if var.is_value() => match env.lookup(var) {
-                None => Err(Error::new(Kind::IdentifierNotInScope, "").with(expr)),
+                None => Err(Error::new(Kind::NotInScope, "").with(expr)),
                 Some(val) => {
                     match val.as_node().as_expr() {
                         Expr::Binding(_) => {}
@@ -31,7 +31,7 @@ where
                 }
             },
             Expr::App(application) => match env.lookup(&application.name) {
-                None => Err(Error::new(Kind::IdentifierNotAFunction, "").with(expr)),
+                None => Err(Error::new(Kind::NotAFunction, "").with(expr)),
                 Some(val) => {
                     if let Expr::Lambda(lambda) = val.as_node().as_expr() {
                         let app_env = &mut Env::new(None);
@@ -49,7 +49,7 @@ where
                         expr.combine(app);
                         Ok(())
                     } else {
-                        Err(Error::new(Kind::IdentifierNotAFunction, "").with(expr))
+                        Err(Error::new(Kind::NotAFunction, "").with(expr))
                     }
                 }
             },

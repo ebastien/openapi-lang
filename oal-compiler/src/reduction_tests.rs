@@ -41,7 +41,7 @@ fn check_free_vars(
     match node {
         NodeRef::Expr(e) => match e.as_node().as_expr() {
             Expr::Var(var) if var.is_value() => match env.lookup(var) {
-                None => Err(Error::new(Kind::IdentifierNotInScope, "").with(e)),
+                None => Err(Error::new(Kind::NotInScope, "").with(e)),
                 Some(val) => match val.as_node().as_expr() {
                     Expr::Binding(_) => Ok(()),
                     _ => Err(Error::new(Kind::Unknown, "remaining free variable").with(e)),

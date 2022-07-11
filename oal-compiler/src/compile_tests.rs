@@ -20,10 +20,9 @@ fn compile_module() {
     };
     let mods = load(main, loader, compile).expect("loading failed");
 
-    assert_eq!(mods.programs.len(), 2);
+    assert_eq!(mods.len(), 2);
 
-    let p = mods.programs.get(main).expect("expected main program");
-    if let Statement::Decl(d) = p.stmts.last().expect("expected statement") {
+    if let Statement::Decl(d) = mods.main().stmts.last().expect("expected statement") {
         if let Expr::Op(op) = d.expr.as_node().as_expr() {
             assert_eq!(op.op, Operator::Sum);
         } else {

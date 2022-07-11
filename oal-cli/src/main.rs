@@ -44,11 +44,9 @@ fn main() -> anyhow::Result<()> {
 
     let mods = oal_compiler::load(&main_mod, loader, compiler)?;
 
-    let program = mods.programs.get(&main_mod).unwrap();
-
     eprintln!("Generating API definition");
 
-    let spec = oal_compiler::spec::Spec::try_from(program)?;
+    let spec = oal_compiler::spec::Spec::try_from(&mods)?;
 
     let mut builder = oal_codegen::Builder::new().with_spec(spec);
 

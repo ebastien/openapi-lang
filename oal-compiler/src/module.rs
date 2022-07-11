@@ -9,7 +9,7 @@ use std::collections::HashMap;
 #[derive(Clone, Debug)]
 pub struct ModuleSet<T> {
     pub base: Locator,
-    pub programs: HashMap<Locator, Program<T>>,
+    programs: HashMap<Locator, Program<T>>,
 }
 
 impl<T> ModuleSet<T> {
@@ -18,6 +18,22 @@ impl<T> ModuleSet<T> {
             base,
             programs: Default::default(),
         }
+    }
+
+    pub fn main(&self) -> &Program<T> {
+        self.programs.get(&self.base).unwrap()
+    }
+
+    pub fn insert(&mut self, l: Locator, p: Program<T>) {
+        self.programs.insert(l, p);
+    }
+
+    pub fn len(&self) -> usize {
+        self.programs.len()
+    }
+
+    pub fn get(&self, l: &Locator) -> Option<&Program<T>> {
+        self.programs.get(l)
     }
 }
 
@@ -91,7 +107,7 @@ where
         }
     })?;
     let prog = compiler(mods, base, prg)?;
-    mods.programs.insert(base.clone(), prog);
+    mods.insert(base.clone(), prog);
     Ok(())
 }
 

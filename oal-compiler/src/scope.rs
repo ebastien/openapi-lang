@@ -61,7 +61,7 @@ where
     pub fn import(&mut self, path: &str) -> Result<()> {
         if let Some(mods) = self.modules {
             let loc = mods.base.join(path)?;
-            if let Some(m) = mods.programs.get(&loc) {
+            if let Some(m) = mods.get(&loc) {
                 m.scan(self, &mut Env::new(None), &mut declaration_scan)
             } else {
                 // All modules that are to be imported must be present in the module-set.

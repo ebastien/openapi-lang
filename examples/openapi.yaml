@@ -132,6 +132,36 @@ paths:
         style: form
 components:
   schemas:
+    obj2:
+      allOf:
+        - $ref: "#/components/schemas/obj1"
+        - type: object
+          properties:
+            age:
+              type: integer
+              minimum: 0
+              maximum: 999
+    obj1:
+      description: some stuff
+      type: object
+      properties:
+        firstName:
+          title: First name
+          type: string
+          pattern: "^[a-z]+$"
+        lastName:
+          title: Last name
+          type: string
+          pattern: "^[a-z]+$"
+        middleNames:
+          title: Middle names
+          type: array
+          items:
+            type: string
+            pattern: "^[a-z]+$"
+      required:
+        - firstName
+        - lastName
     obj3:
       description: some other stuff
       allOf:

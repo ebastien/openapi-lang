@@ -4,8 +4,8 @@ use std::fmt::{Debug, Display, Formatter};
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Kind {
     Unknown,
-    IdentifierNotInScope,
-    IdentifierNotAFunction,
+    NotInScope,
+    NotAFunction,
     InvalidTypes,
     Conflict,
     UnexpectedExpression,

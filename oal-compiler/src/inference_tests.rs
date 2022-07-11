@@ -80,7 +80,7 @@ fn tag_not_in_scope() {
     let r = d.transform(&mut TagSeq::default(), &mut Env::new(None), &mut tag_type);
 
     if let Err(e) = r {
-        assert_eq!(e.kind, Kind::IdentifierNotInScope);
+        assert_eq!(e.kind, Kind::NotInScope);
     } else {
         panic!("expected error");
     }

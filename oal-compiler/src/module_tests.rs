@@ -14,8 +14,8 @@ fn module_simple() {
     let compiler = |_mods: &ModuleSet, _l: &Locator, p: Program| -> Result<Program> { Ok(p) };
     let mods = load(loc, loader, compiler).expect("loading failed");
 
-    assert_eq!(mods.programs.len(), 1);
-    assert_eq!(*mods.programs.keys().next().unwrap(), *loc);
+    assert_eq!(mods.len(), 1);
+    assert!(mods.get(loc).is_some());
 }
 
 #[test]

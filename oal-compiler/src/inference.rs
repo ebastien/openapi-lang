@@ -78,7 +78,7 @@ where
                 Ok(())
             }
             Expr::Var(var) => match env.lookup(var) {
-                None => Err(Error::new(Kind::IdentifierNotInScope, "").with(expr)),
+                None => Err(Error::new(Kind::NotInScope, "").with(expr)),
                 Some(val) => {
                     expr.set_tag(val.unwrap_tag());
                     Ok(())
@@ -89,13 +89,13 @@ where
                 Ok(())
             }
             Expr::App(application) => match env.lookup(&application.name) {
-                None => Err(Error::new(Kind::IdentifierNotInScope, "").with(expr)),
+                None => Err(Error::new(Kind::NotInScope, "").with(expr)),
                 Some(val) => {
                     if let Expr::Lambda(l) = val.as_node().as_expr() {
                         expr.set_tag(l.body.unwrap_tag());
                         Ok(())
                     } else {
-                        Err(Error::new(Kind::IdentifierNotAFunction, "").with(expr))
+                        Err(Error::new(Kind::NotAFunction, "").with(expr))
                     }
                 }
             },
@@ -344,7 +344,7 @@ where
                 Ok(())
             }
             Expr::App(application) => match env.lookup(&application.name) {
-                None => Err(Error::new(Kind::IdentifierNotInScope, "").with(expr)),
+                None => Err(Error::new(Kind::NotInScope, "").with(expr)),
                 Some(val) => {
                     let bindings = application.args.iter().map(|a| a.unwrap_tag()).collect();
                     let range = expr.unwrap_tag().into();

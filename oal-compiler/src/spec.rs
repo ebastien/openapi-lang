@@ -1,5 +1,9 @@
 use crate::annotation::Annotated;
 use crate::errors::{Error, Kind, Result};
+use crate::module::ModuleSet;
+use crate::node::NodeRef;
+use crate::scan::Scan;
+use crate::scope::Env;
 use enum_map::EnumMap;
 use indexmap::IndexMap;
 use oal_syntax::ast::AsExpr;
@@ -487,50 +491,62 @@ pub type PathPattern = String;
 pub type Relations = IndexMap<PathPattern, Relation>;
 pub type References = IndexMap<Ident, Reference>;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Default)]
 pub struct Spec {
     pub rels: Relations,
     pub refs: References,
 }
 
-impl<T> TryFrom<&ast::Program<T>> for Spec
+impl<T> TryFrom<&ModuleSet<T>> for Spec
 where
     T: AsExpr + Annotated,
 {
     type Error = Error;
 
-    fn try_from(prg: &ast::Program<T>) -> Result<Self> {
-        let mut rels: Relations = IndexMap::new();
-        let mut refs: References = IndexMap::new();
+    fn try_from(mods: &ModuleSet<T>) -> Result<Self> {
+        let mut spec = Spec::default();
+        let prg = mods.main();
+        prg.scan(&mut spec, &mut Env::new(Some(mods)), &mut export)?;
+        Ok(spec)
+    }
+}
 
-        prg.stmts.iter().try_for_each(|stmt| match stmt {
-            ast::Statement::Decl(decl) if decl.name.is_reference() => {
-                let ref_ = Reference::try_from(&decl.expr)?;
-                match refs.entry(decl.name.clone()) {
-                    indexmap::map::Entry::Vacant(v) => {
-                        v.insert(ref_);
+/// Visits an abstract syntax tree to export references and relations.
+fn export<T>(spec: &mut Spec, env: &mut Env<T>, node_ref: NodeRef<T>) -> Result<()>
+where
+    T: AsExpr + Annotated,
+{
+    match node_ref {
+        NodeRef::Expr(expr) => {
+            let node = expr.as_node();
+            let span = node.span;
+            match node.as_expr() {
+                ast::Expr::Var(name) if name.is_reference() => match env.lookup(name) {
+                    None => Err(Error::new(Kind::NotInScope, "").with(expr)),
+                    Some(val) => {
+                        let ref_ = Reference::try_from(val)?;
+                        spec.refs.entry(name.clone()).or_insert(ref_);
                         Ok(())
                     }
-                    indexmap::map::Entry::Occupied(_) => {
-                        Err(Error::new(Kind::Conflict, "redefined reference").with(&ref_))
-                    }
+                },
+                _ => Ok(()),
+            }
+            .map_err(|err| err.at(span))
+        }
+        NodeRef::Res(res) => {
+            let span = res.rel.as_node().span;
+            let rel = Relation::try_from(&res.rel)?;
+            match spec.rels.entry(rel.uri.pattern()) {
+                indexmap::map::Entry::Vacant(v) => {
+                    v.insert(rel);
+                    Ok(())
+                }
+                indexmap::map::Entry::Occupied(_) => {
+                    Err(Error::new(Kind::Conflict, "redefined relation").with(&rel))
                 }
             }
-            ast::Statement::Res(res) => {
-                let rel = Relation::try_from(&res.rel)?;
-                match rels.entry(rel.uri.pattern()) {
-                    indexmap::map::Entry::Vacant(v) => {
-                        v.insert(rel);
-                        Ok(())
-                    }
-                    indexmap::map::Entry::Occupied(_) => {
-                        Err(Error::new(Kind::Conflict, "redefined relation").with(&rel))
-                    }
-                }
-            }
-            _ => Ok(()),
-        })?;
-
-        Ok(Spec { rels, refs })
+            .map_err(|err| err.at(span))
+        }
+        _ => Ok(()),
     }
 }
